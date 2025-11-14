@@ -22,16 +22,22 @@ const SOUND_TYPES: MoodComponentSchema["sound"]["type"][] = [
   "blue_noise",
 ];
 
-const CURSE_WORDS = [
-  "fuck",
-  "shit",
-  "bitch",
-  "asshole",
-  "bastard",
-  "cunt",
-  "motherfucker",
+const CURSE_PATTERNS = [
+  /\bfuck\w*/i,
+  /\bshit\w*/i,
+  /\bbitch\w*/i,
+  /\basshole\w*/i,
+  /\bbastard\w*/i,
+  /\bcunt\w*/i,
+  /\bmotherfucker\w*/i,
 ];
 const CURSE_MESSAGE = "Take a breath.";
+const KEYBOARD_SLAM_PATTERNS = [
+  /(.)\1{3,}/i,
+  /[asdfghjkl]{5,}/i,
+  /[zxcvbnm]{5,}/i,
+  /[!@#$%^&*()_\-+=]{5,}/,
+];
 
 const PROMPT_TEMPLATE = (mood: string) => `
 You are generating UI instructions for a mood visualizer.
@@ -130,6 +136,17 @@ const extractJson = (text: string) => {
   return match ? match[0] : text;
 };
 
+const isAllCapsScream = (value: string) => {
+  const letters = value.replace(/[^a-zA-Z]/g, "");
+  if (letters.length < 4) return false;
+  return letters === letters.toUpperCase();
+};
+
+const isDistressedInput = (value: string) =>
+  CURSE_PATTERNS.some((pattern) => pattern.test(value)) ||
+  KEYBOARD_SLAM_PATTERNS.some((pattern) => pattern.test(value)) ||
+  isAllCapsScream(value);
+
 export async function POST(req: Request) {
   try {
     const { mood } = await req.json();
@@ -141,14 +158,12 @@ export async function POST(req: Request) {
       );
     }
 
-    const containsCurse = CURSE_WORDS.some((word) =>
-      new RegExp(`\\b${word}\\b`, "i").test(mood)
-    );
-    const moodForPrompt = containsCurse ? "stressed" : mood;
+    const isDistressed = isDistressedInput(mood);
+    const moodForPrompt = isDistressed ? "stressed" : mood;
 
     if (!OPENAI_API_KEY) {
       return NextResponse.json(
-        containsCurse ? applyCalmingDefaults() : fallbackSchema
+        isDistressed ? applyCalmingDefaults() : fallbackSchema
       );
     }
 
@@ -192,7 +207,7 @@ export async function POST(req: Request) {
     }
 
     const sanitized = sanitizeSchema(parsed);
-    const finalSchema = containsCurse
+    const finalSchema = isDistressed
       ? applyCalmingDefaults(sanitized)
       : sanitized;
     return NextResponse.json(finalSchema);

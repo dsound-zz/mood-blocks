@@ -173,6 +173,29 @@ export default function MoodRenderer({
       {effect === "particles" && <Particles intensity={intensity} />}
       {effect === "ripple" && <Ripple intensity={intensity} color={color} />}
 
+      {schema.message && (
+        <div
+          style={{
+            position: "absolute",
+            top: "2rem",
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 2,
+            background: "rgba(2,6,23,0.7)",
+            borderRadius: "999px",
+            padding: "0.5rem 1.5rem",
+            border: "1px solid rgba(255,255,255,0.15)",
+            color: "white",
+            fontSize: "0.9rem",
+            letterSpacing: "0.02em",
+            boxShadow: "0 12px 30px rgba(0,0,0,0.25)",
+            backdropFilter: "blur(8px)",
+          }}
+        >
+          {schema.message}
+        </div>
+      )}
+
       <FrequencySplash sound={effectiveSound} moodLabel={moodLabel} />
       <BinauralInfoOverlay
         mode={isBinaural ? overlayMode : "hidden"}
