@@ -1,47 +1,114 @@
 "use client";
 
-import { useState } from "react";
+import { FormEvent, useState } from "react";
+import MoodRenderer from "./components/MoodRenderer";
+import type { MoodComponentSchema } from "./types/schema";
+import { prepareAudioContext } from "./utils/sound";
 
 export default function Home() {
   const [mood, setMood] = useState("");
-  const [schema, setSchema] = useState(null);
+  const [schema, setSchema] = useState<MoodComponentSchema | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  async function handleSubmit() {
-    const res = await fetch("/api/mood", {
-      method: "POST",
-      body: JSON.stringify({ mood }),
-    });
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!mood.trim()) return;
 
-    const json = await res.json();
-    setSchema(json);
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      await prepareAudioContext();
+      const res = await fetch("/api/mood", {
+        method: "POST",
+        body: JSON.stringify({ mood }),
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if (!res.ok) {
+        throw new Error("Unable to generate mood right now.");
+      }
+
+      const json = (await res.json()) as MoodComponentSchema;
+      setSchema(json);
+    } catch (err) {
+      console.error(err);
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleEnd = () => {
+    setSchema(null);
+    setMood("");
+  };
+
+  if (schema) {
+    return <MoodRenderer schema={schema} onEnd={handleEnd} />;
   }
 
   return (
-    <main style={{ padding: 40 }}>
-      <h1>Mood Blocks</h1>
-
-      <div style={{ display: "flex", gap: 10 }}>
-        {["Calm", "Stressed", "Energized", "Overwhelmed"].map((m) => (
-          <button key={m} onClick={() => setMood(m.toLowerCase())}>
-            {m}
-          </button>
-        ))}
-      </div>
-
-      <input
-        placeholder="Or type your mood..."
-        value={mood}
-        onChange={(e) => setMood(e.target.value)}
-        style={{ marginTop: 20 }}
-      />
-
-      <button onClick={handleSubmit} style={{ marginLeft: 10 }}>
-        Go
-      </button>
-
-      {schema ? (
-        <pre style={{ marginTop: 20 }}>{JSON.stringify(schema, null, 2)}</pre>
-      ) : null}
+    <main
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "#020617",
+        color: "white",
+        padding: "2rem",
+      }}
+    >
+      <form
+        onSubmit={handleSubmit}
+        style={{
+          width: "100%",
+          maxWidth: "420px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "1rem",
+        }}
+      >
+        <h1 style={{ fontSize: "2.5rem", marginBottom: "0.5rem" }}>
+          How are you?
+        </h1>
+        <input
+          type="text"
+          value={mood}
+          onChange={(e) => setMood(e.target.value)}
+          placeholder="Try calm, excited, overwhelmed..."
+          style={{
+            padding: "0.85rem 1rem",
+            borderRadius: "0.75rem",
+            border: "1px solid rgba(255,255,255,0.2)",
+            fontSize: "1rem",
+            background: "rgba(2,6,23,0.6)",
+            color: "white",
+          }}
+        />
+        <button
+          type="submit"
+          disabled={isLoading}
+          style={{
+            padding: "0.85rem 1rem",
+            borderRadius: "0.75rem",
+            border: "none",
+            fontSize: "1rem",
+            background: "white",
+            color: "#020617",
+            fontWeight: 600,
+            cursor: isLoading ? "wait" : "pointer",
+            opacity: isLoading ? 0.7 : 1,
+          }}
+        >
+          {isLoading ? "..." : "Go"}
+        </button>
+        {error && (
+          <p style={{ color: "#fda4af", fontSize: "0.9rem" }}>{error}</p>
+        )}
+      </form>
     </main>
   );
 }
