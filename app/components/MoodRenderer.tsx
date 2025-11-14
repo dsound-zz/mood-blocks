@@ -25,19 +25,19 @@ export default function MoodRenderer({
 }: MoodRendererProps) {
   const { color, effect, sound, intensity } = schema;
   const isBinaural = sound?.type === "binaural";
-  const leftHz =
-    sound?.leftHz ??
-    sound?.frequencyLeft ??
-    null;
-  const rightHz =
-    sound?.rightHz ??
-    sound?.frequencyRight ??
-    null;
+  const leftHz = sound?.leftHz ?? sound?.frequencyLeft ?? null;
+  const rightHz = sound?.rightHz ?? sound?.frequencyRight ?? null;
   const beatHz =
     leftHz != null && rightHz != null ? Math.abs(rightHz - leftHz) : null;
   const [overlayMode, setOverlayMode] = useState<
     "hidden" | "initial" | "reminder"
   >("hidden");
+  const binauralSignature = isBinaural
+    ? [
+        sound?.leftHz ?? sound?.frequencyLeft ?? "x",
+        sound?.rightHz ?? sound?.frequencyRight ?? "y",
+      ].join("-")
+    : null;
 
   useEffect(() => {
     void startSound(sound);
@@ -49,18 +49,16 @@ export default function MoodRenderer({
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (!isBinaural) {
-      setOverlayMode("hidden");
+      window.setTimeout(() => setOverlayMode("hidden"), 0);
       return;
     }
 
-    setOverlayMode("initial");
-    let hideInitial: number | undefined;
+    window.setTimeout(() => setOverlayMode("initial"), 0);
     let reminderHide: number | undefined;
-    let reminderInterval: number | undefined;
 
     const hideOverlay = () => setOverlayMode("hidden");
 
-    hideInitial = window.setTimeout(hideOverlay, 4000);
+    const hideInitial = window.setTimeout(hideOverlay, 4000);
 
     const triggerReminder = () => {
       setOverlayMode("reminder");
@@ -68,14 +66,14 @@ export default function MoodRenderer({
       reminderHide = window.setTimeout(hideOverlay, 3000);
     };
 
-    reminderInterval = window.setInterval(triggerReminder, 15000);
+    const reminderInterval = window.setInterval(triggerReminder, 15000);
 
     return () => {
       window.clearTimeout(hideInitial);
       window.clearTimeout(reminderHide);
       window.clearInterval(reminderInterval);
     };
-  }, [isBinaural]);
+  }, [isBinaural, binauralSignature]);
 
   const handleEnd = () => {
     stopSound();
@@ -95,9 +93,7 @@ export default function MoodRenderer({
     >
       {effect === "gradient" && <Gradient intensity={intensity} />}
       {effect === "splatter" && <Splatter intensity={intensity} />}
-      {effect === "pulse" && (
-        <Pulse intensity={intensity} color={color} />
-      )}
+      {effect === "pulse" && <Pulse intensity={intensity} color={color} />}
       {effect === "haze" && <Haze intensity={intensity} color={color} />}
       {effect === "particles" && <Particles intensity={intensity} />}
       {effect === "ripple" && <Ripple intensity={intensity} color={color} />}
