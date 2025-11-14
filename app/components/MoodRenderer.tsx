@@ -29,6 +29,7 @@ export default function MoodRenderer({
     MoodComponentSchema["sound"] | null
   >(null);
   const effectiveSound = soundOverride ?? schemaSound;
+  const [messageOpacity, setMessageOpacity] = useState(0);
   const isBinaural = effectiveSound?.type === "binaural";
   const leftHz =
     effectiveSound?.leftHz ??
@@ -60,6 +61,21 @@ export default function MoodRenderer({
       stopSound();
     };
   }, [schemaSound]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!schema.message) {
+      setMessageOpacity(0);
+      return;
+    }
+    setMessageOpacity(1);
+    const fadeOut = window.setTimeout(() => {
+      setMessageOpacity(0);
+    }, 7000);
+    return () => {
+      window.clearTimeout(fadeOut);
+    };
+  }, [schema.message]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -185,13 +201,15 @@ export default function MoodRenderer({
             borderRadius: "1.5rem",
             padding: "1.25rem 2rem",
             border: "1px solid rgba(255,255,255,0.2)",
-            color: "white",
-            fontSize: "1.5rem",
+            color: "#f8fafc",
+            fontSize: "2rem",
             fontWeight: 600,
             letterSpacing: "0.03em",
             textAlign: "center",
             boxShadow: "0 20px 40px rgba(0,0,0,0.35)",
             backdropFilter: "blur(12px)",
+            opacity: messageOpacity,
+            transition: "opacity 1.5s ease-in-out",
           }}
         >
           {schema.message}
