@@ -177,19 +177,21 @@ export default function MoodRenderer({
         <div
           style={{
             position: "absolute",
-            top: "2rem",
+            top: "50%",
             left: "50%",
-            transform: "translateX(-50%)",
-            zIndex: 2,
-            background: "rgba(2,6,23,0.7)",
-            borderRadius: "999px",
-            padding: "0.5rem 1.5rem",
-            border: "1px solid rgba(255,255,255,0.15)",
+            transform: "translate(-50%, -50%)",
+            zIndex: 3,
+            background: "rgba(2,6,23,0.75)",
+            borderRadius: "1.5rem",
+            padding: "1.25rem 2rem",
+            border: "1px solid rgba(255,255,255,0.2)",
             color: "white",
-            fontSize: "0.9rem",
-            letterSpacing: "0.02em",
-            boxShadow: "0 12px 30px rgba(0,0,0,0.25)",
-            backdropFilter: "blur(8px)",
+            fontSize: "1.5rem",
+            fontWeight: 600,
+            letterSpacing: "0.03em",
+            textAlign: "center",
+            boxShadow: "0 20px 40px rgba(0,0,0,0.35)",
+            backdropFilter: "blur(12px)",
           }}
         >
           {schema.message}
