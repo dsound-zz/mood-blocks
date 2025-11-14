@@ -1,3 +1,12 @@
+export type SoundType =
+  | "none"
+  | "sine"
+  | "binaural"
+  | "white_noise"
+  | "pink_noise"
+  | "brown_noise"
+  | "blue_noise";
+
 export type MoodComponentSchema = {
   type: "mood_display";
   color: string;
@@ -10,7 +19,7 @@ export type MoodComponentSchema = {
     | "ripple";
   intensity: number;
   sound: {
-    type: "none" | "sine" | "binaural";
+    type: SoundType;
     leftHz?: number;
     rightHz?: number;
     volume?: number;
@@ -18,4 +27,5 @@ export type MoodComponentSchema = {
     frequencyLeft?: number;
     frequencyRight?: number;
   };
+  message?: string;
 };

@@ -12,6 +12,26 @@ const EFFECTS: MoodComponentSchema["effect"][] = [
   "particles",
   "ripple",
 ];
+const SOUND_TYPES: MoodComponentSchema["sound"]["type"][] = [
+  "none",
+  "sine",
+  "binaural",
+  "white_noise",
+  "pink_noise",
+  "brown_noise",
+  "blue_noise",
+];
+
+const CURSE_WORDS = [
+  "fuck",
+  "shit",
+  "bitch",
+  "asshole",
+  "bastard",
+  "cunt",
+  "motherfucker",
+];
+const CURSE_MESSAGE = "Take a breath.";
 
 const PROMPT_TEMPLATE = (mood: string) => `
 You are generating UI instructions for a mood visualizer.
@@ -49,10 +69,9 @@ const sanitizeSchema = (data: any): MoodComponentSchema => {
     ? data.effect
     : "gradient";
 
-  const soundType =
-    data?.sound?.type === "sine" || data?.sound?.type === "binaural"
-      ? data.sound.type
-      : "none";
+  const soundType = SOUND_TYPES.includes(data?.sound?.type)
+    ? data.sound.type
+    : "none";
 
   const parseHz = (value: unknown) =>
     typeof value === "number" ? value : undefined;
@@ -77,6 +96,7 @@ const sanitizeSchema = (data: any): MoodComponentSchema => {
           ? clamp(data.sound.volume)
           : 0.3,
     },
+    message: typeof data?.message === "string" ? data.message : undefined,
   };
 };
 
@@ -90,6 +110,20 @@ const fallbackSchema: MoodComponentSchema = {
     volume: 0.2,
   },
 };
+
+const applyCalmingDefaults = (
+  schema: MoodComponentSchema = fallbackSchema
+): MoodComponentSchema => ({
+  ...schema,
+  color: "#6b7fd8",
+  effect: "haze",
+  intensity: 0.35,
+  sound: {
+    type: "pink_noise",
+    volume: 0.18,
+  },
+  message: CURSE_MESSAGE,
+});
 
 const extractJson = (text: string) => {
   const match = text.match(/\{[\s\S]*\}/);
@@ -107,8 +141,15 @@ export async function POST(req: Request) {
       );
     }
 
+    const containsCurse = CURSE_WORDS.some((word) =>
+      new RegExp(`\\b${word}\\b`, "i").test(mood)
+    );
+    const moodForPrompt = containsCurse ? "stressed" : mood;
+
     if (!OPENAI_API_KEY) {
-      return NextResponse.json(fallbackSchema);
+      return NextResponse.json(
+        containsCurse ? applyCalmingDefaults() : fallbackSchema
+      );
     }
 
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -123,7 +164,7 @@ export async function POST(req: Request) {
         messages: [
           {
             role: "user",
-            content: PROMPT_TEMPLATE(mood),
+            content: PROMPT_TEMPLATE(moodForPrompt),
           },
         ],
       }),
@@ -151,7 +192,10 @@ export async function POST(req: Request) {
     }
 
     const sanitized = sanitizeSchema(parsed);
-    return NextResponse.json(sanitized);
+    const finalSchema = containsCurse
+      ? applyCalmingDefaults(sanitized)
+      : sanitized;
+    return NextResponse.json(finalSchema);
   } catch (error) {
     console.error("Mood API error", error);
     return NextResponse.json(fallbackSchema);

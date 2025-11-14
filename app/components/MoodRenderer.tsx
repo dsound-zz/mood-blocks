@@ -9,6 +9,7 @@ import Particles from "@/app/components/effects/Particles";
 import Ripple from "@/app/components/effects/Ripple";
 import FrequencySplash from "@/app/components/FrequencySplash";
 import BinauralInfoOverlay from "@/app/components/BinauralInfoOverlay";
+import SoundToggle from "@/app/components/SoundToggle";
 import { startSound, stopSound } from "@/app/utils/sound";
 import type { MoodComponentSchema } from "@/app/types/schema";
 
@@ -23,10 +24,20 @@ export default function MoodRenderer({
   onEnd,
   moodLabel,
 }: MoodRendererProps) {
-  const { color, effect, sound, intensity } = schema;
-  const isBinaural = sound?.type === "binaural";
-  const leftHz = sound?.leftHz ?? sound?.frequencyLeft ?? null;
-  const rightHz = sound?.rightHz ?? sound?.frequencyRight ?? null;
+  const { color, effect, sound: schemaSound, intensity } = schema;
+  const [soundOverride, setSoundOverride] = useState<
+    MoodComponentSchema["sound"] | null
+  >(null);
+  const effectiveSound = soundOverride ?? schemaSound;
+  const isBinaural = effectiveSound?.type === "binaural";
+  const leftHz =
+    effectiveSound?.leftHz ??
+    effectiveSound?.frequencyLeft ??
+    null;
+  const rightHz =
+    effectiveSound?.rightHz ??
+    effectiveSound?.frequencyRight ??
+    null;
   const beatHz =
     leftHz != null && rightHz != null ? Math.abs(rightHz - leftHz) : null;
   const [overlayMode, setOverlayMode] = useState<
@@ -34,17 +45,21 @@ export default function MoodRenderer({
   >("hidden");
   const binauralSignature = isBinaural
     ? [
-        sound?.leftHz ?? sound?.frequencyLeft ?? "x",
-        sound?.rightHz ?? sound?.frequencyRight ?? "y",
+        effectiveSound?.leftHz ??
+          effectiveSound?.frequencyLeft ??
+          "x",
+        effectiveSound?.rightHz ??
+          effectiveSound?.frequencyRight ??
+          "y",
       ].join("-")
     : null;
 
   useEffect(() => {
-    void startSound(sound);
+    void startSound(schemaSound);
     return () => {
       stopSound();
     };
-  }, [sound]);
+  }, [schemaSound]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -75,7 +90,67 @@ export default function MoodRenderer({
     };
   }, [isBinaural, binauralSignature]);
 
+  const buildSoundOverride = (
+    selected: MoodComponentSchema["sound"]["type"]
+  ): MoodComponentSchema["sound"] | null => {
+    if (schemaSound && selected === schemaSound.type) {
+      return null;
+    }
+
+    const baseVolume = schemaSound?.volume ?? 0.35;
+    if (selected === "none") {
+      return { type: "none", volume: 0 };
+    }
+
+    if (selected === "sine") {
+      const freq =
+        schemaSound?.leftHz ??
+        schemaSound?.rightHz ??
+        schemaSound?.frequencyLeft ??
+        schemaSound?.frequencyRight ??
+        432;
+      return {
+        type: "sine",
+        leftHz: freq,
+        rightHz: freq,
+        volume: Math.min(baseVolume, 0.5),
+      };
+    }
+
+    if (selected === "binaural") {
+      const left =
+        schemaSound?.leftHz ??
+        schemaSound?.frequencyLeft ??
+        4;
+      const right =
+        schemaSound?.rightHz ??
+        schemaSound?.frequencyRight ??
+        left + 2;
+      return {
+        type: "binaural",
+        leftHz: left,
+        rightHz: right,
+        volume: Math.min(baseVolume + 0.05, 0.6),
+      };
+    }
+
+    return {
+      type: selected,
+      volume: Math.min(baseVolume, 0.35),
+    };
+  };
+
+  const handleSoundChange = (
+    selected: MoodComponentSchema["sound"]["type"]
+  ) => {
+    const overrideConfig = buildSoundOverride(selected);
+    setSoundOverride(overrideConfig);
+    stopSound();
+    void startSound(overrideConfig ?? schemaSound);
+  };
+
   const handleEnd = () => {
+    setSoundOverride(null);
     stopSound();
     onEnd();
   };
@@ -98,12 +173,26 @@ export default function MoodRenderer({
       {effect === "particles" && <Particles intensity={intensity} />}
       {effect === "ripple" && <Ripple intensity={intensity} color={color} />}
 
-      <FrequencySplash sound={sound} moodLabel={moodLabel} />
+      <FrequencySplash sound={effectiveSound} moodLabel={moodLabel} />
       <BinauralInfoOverlay
         mode={isBinaural ? overlayMode : "hidden"}
         beatHz={beatHz}
         isBinaural={isBinaural}
       />
+
+      <div
+        style={{
+          position: "absolute",
+          bottom: "2rem",
+          right: "2rem",
+          zIndex: 2,
+        }}
+      >
+        <SoundToggle
+          current={effectiveSound?.type ?? "none"}
+          onChange={handleSoundChange}
+        />
+      </div>
 
       <div
         style={{
