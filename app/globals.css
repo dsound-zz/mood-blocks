@@ -24,3 +24,77 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+.frequency-splash {
+  position: absolute;
+  top: 10vh;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+  z-index: 5;
+}
+
+.frequency-splash__content {
+  position: relative;
+  padding: 0.85rem 1.75rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 0 30px rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(18px);
+  animation: frequencySplashPulse 15s ease-in-out forwards;
+  letter-spacing: 0.02em;
+}
+
+.frequency-splash__label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-shadow: 0 0 16px rgba(0, 0, 0, 0.35);
+}
+
+@keyframes frequencySplashPulse {
+  0% {
+    transform: scale(0.92);
+    opacity: 0;
+  }
+  3% {
+    transform: scale(1.04);
+    opacity: 1;
+  }
+  6% {
+    transform: scale(0.97);
+    opacity: 0.9;
+  }
+  9% {
+    transform: scale(1.03);
+    opacity: 1;
+  }
+  12% {
+    transform: scale(0.97);
+    opacity: 0.9;
+  }
+  15% {
+    transform: scale(1.02);
+    opacity: 1;
+  }
+  20% {
+    transform: scale(0.99);
+    opacity: 0.95;
+  }
+  30% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  92% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  97% {
+    transform: scale(0.98);
+    opacity: 0.65;
+  }
+  100% {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+}

@@ -1,192 +1,194 @@
 "use client";
 
-import type { MoodComponentSchema } from "@/app/types/schema";
-
-type SoundConfig = MoodComponentSchema["sound"];
-
-let audioContext: AudioContext | null = null;
-let gainNode: GainNode | null = null;
-let channelMerger: ChannelMergerNode | null = null;
-let activeOscillators: OscillatorNode[] = [];
+type SoundConfig = {
+  type: "none" | "sine" | "binaural";
+  leftHz?: number | null;
+  rightHz?: number | null;
+  volume?: number | null;
+};
 
 const MIN_VOLUME = 0.05;
-const FADE_TIME = 0.3;
+const FADE_DURATION = 0.3;
+const BINAURAL_CARRIER = 200;
+
+let audioCtx: AudioContext | null = null;
+let gainNode: GainNode | null = null;
+let oscLeft: OscillatorNode | null = null;
+let oscRight: OscillatorNode | null = null;
+let channelMerger: ChannelMergerNode | null = null;
 
 const isBrowser = () => typeof window !== "undefined";
 
-const createAudioContext = () => {
+const ensureAudioContext = () => {
   if (!isBrowser()) return null;
-  if (audioContext) return audioContext;
+  if (audioCtx) return audioCtx;
 
-  const AudioCtx =
+  const AudioCtor =
     window.AudioContext || (window as any).webkitAudioContext;
-  audioContext = new AudioCtx();
-  return audioContext;
+  if (!AudioCtor) return null;
+  audioCtx = new AudioCtor();
+  return audioCtx;
 };
 
-export async function prepareAudioContext() {
-  if (!isBrowser()) return;
-  const ctx = createAudioContext();
-  if (!ctx) return;
+const disconnectNode = (node?: AudioNode | null) => {
+  if (!node) return;
+  try {
+    node.disconnect();
+  } catch {
+    /* ignore */
+  }
+};
 
-  if (ctx.state === "suspended") {
+const immediateDispose = () => {
+  [oscLeft, oscRight].forEach((osc) => {
+    if (!osc) return;
+    try {
+      osc.stop();
+    } catch {
+      /* ignore */
+    }
+    disconnectNode(osc);
+  });
+  oscLeft = null;
+  oscRight = null;
+
+  disconnectNode(channelMerger);
+  channelMerger = null;
+
+  disconnectNode(gainNode);
+  gainNode = null;
+};
+
+const stopOscillator = (osc: OscillatorNode | null, when: number) => {
+  if (!osc) return;
+  try {
+    osc.stop(when);
+  } catch {
+    try {
+      osc.stop();
+    } catch {
+      /* ignore */
+    }
+  }
+};
+
+export async function unlockAudio() {
+  if (!isBrowser()) return;
+  const ctx = ensureAudioContext();
+  if (ctx && ctx.state === "suspended") {
     try {
       await ctx.resume();
     } catch {
-      // ignore resume errors
+      /* ignore */
     }
   }
 }
 
-const resetNodes = () => {
-  activeOscillators.forEach((osc) => {
-    try {
-      osc.stop();
-    } catch {
-      /* already stopped */
-    }
-    try {
-      osc.disconnect();
-    } catch {
-      /* no-op */
-    }
-  });
-  activeOscillators = [];
-
-  if (channelMerger) {
-    try {
-      channelMerger.disconnect();
-    } catch {
-      /* no-op */
-    }
-    channelMerger = null;
-  }
-
-  if (gainNode) {
-    try {
-      gainNode.disconnect();
-    } catch {
-      /* no-op */
-    }
-    gainNode = null;
-  }
-};
-
-export async function startSound(sound?: SoundConfig) {
+export function startSound(sound?: SoundConfig | null) {
   if (!isBrowser()) return;
   if (!sound || sound.type === "none") {
     stopSound();
     return;
   }
 
-  await prepareAudioContext();
-  const ctx = audioContext;
+  const ctx = ensureAudioContext();
   if (!ctx) return;
+  if (ctx.state === "suspended") {
+    void ctx.resume();
+  }
 
-  resetNodes();
+  immediateDispose();
 
   const gain = ctx.createGain();
-  gain.gain.value = 0.0001;
   gain.connect(ctx.destination);
+  gain.gain.setValueAtTime(0, ctx.currentTime);
   gainNode = gain;
 
-  const targetVolume = Math.max(sound.volume ?? 0.3, MIN_VOLUME);
-  const now = ctx.currentTime;
-  gain.gain.cancelScheduledValues(now);
-  gain.gain.setValueAtTime(0.0001, now);
-  gain.gain.linearRampToValueAtTime(targetVolume, now + FADE_TIME);
+  const targetVolume = Math.max(MIN_VOLUME, sound.volume ?? 0.5);
+  gain.gain.linearRampToValueAtTime(targetVolume, ctx.currentTime + FADE_DURATION);
 
   if (sound.type === "sine") {
     const osc = ctx.createOscillator();
     osc.type = "sine";
-    osc.frequency.value = sound.frequencyLeft ?? 432;
+    const freq = sound.leftHz ?? sound.rightHz ?? 432;
+    osc.frequency.value = freq;
     osc.connect(gain);
     osc.start();
-    activeOscillators = [osc];
-    console.log(
-      "[MoodBlocks] Playing sine tone",
-      osc.frequency.value.toFixed(2),
-      "Hz"
-    );
+    oscLeft = osc;
+    oscRight = null;
     return;
   }
 
-  if (sound.type === "binaural") {
-    const leftFreq = sound.frequencyLeft ?? 200;
-    const rightFreq = sound.frequencyRight ?? leftFreq + 4;
+  const carrier = BINAURAL_CARRIER;
+  const lowLeft = sound.leftHz ?? 4;
+  const lowRight = sound.rightHz ?? (lowLeft + 2);
+  const freqLeft = carrier + lowLeft;
+  const freqRight = carrier + lowRight;
 
-    const left = ctx.createOscillator();
-    const right = ctx.createOscillator();
-    left.type = "sine";
-    right.type = "sine";
-    left.frequency.value = leftFreq;
-    right.frequency.value = rightFreq;
+  const left = ctx.createOscillator();
+  left.type = "sine";
+  left.frequency.value = freqLeft;
 
-    const merger = ctx.createChannelMerger(2);
-    channelMerger = merger;
+  const right = ctx.createOscillator();
+  right.type = "sine";
+  right.frequency.value = freqRight;
 
-    left.connect(merger, 0, 0);
-    right.connect(merger, 0, 1);
-    merger.connect(gain);
+  const merger = ctx.createChannelMerger(2);
+  channelMerger = merger;
 
-    left.start();
-    right.start();
-    activeOscillators = [left, right];
-    console.log("[MoodBlocks] Playing binaural beat", {
-      leftHz: leftFreq,
-      rightHz: rightFreq,
-    });
-  }
+  left.connect(merger, 0, 0);
+  right.connect(merger, 0, 1);
+  merger.connect(gain);
+
+  left.start();
+  right.start();
+
+  oscLeft = left;
+  oscRight = right;
 }
 
 export function stopSound() {
   if (!isBrowser()) {
-    resetNodes();
-    audioContext = null;
+    immediateDispose();
+    audioCtx = null;
     return;
   }
 
-  if (!audioContext || !gainNode) {
-    resetNodes();
-    if (audioContext) {
-      audioContext
-        .close()
-        .catch(() => {
-          /* ignore */
-        });
-      audioContext = null;
-    }
+  const ctx = audioCtx;
+  if (!ctx || !gainNode) {
+    immediateDispose();
     return;
   }
 
-  const ctx = audioContext;
+  const gain = gainNode;
   const now = ctx.currentTime;
-  const stopTime = now + FADE_TIME;
+  const stopAt = now + FADE_DURATION;
 
-  gainNode.gain.cancelScheduledValues(now);
-  gainNode.gain.setValueAtTime(gainNode.gain.value || 0.0001, now);
-  gainNode.gain.linearRampToValueAtTime(0.0001, stopTime);
+  gain.gain.cancelScheduledValues(now);
+  const currentValue = gain.gain.value ?? 0;
+  gain.gain.setValueAtTime(currentValue, now);
+  gain.gain.linearRampToValueAtTime(0, stopAt);
 
-  activeOscillators.forEach((osc) => {
-    try {
-      osc.stop(stopTime);
-    } catch {
-      try {
-        osc.stop();
-      } catch {
-        /* ignore */
-      }
-    }
-  });
+  const nodes = {
+    left: oscLeft,
+    right: oscRight,
+    merger: channelMerger,
+    gain,
+  };
 
-  audioContext = null;
+  stopOscillator(nodes.left, stopAt);
+  stopOscillator(nodes.right, stopAt);
 
+  oscLeft = null;
+  oscRight = null;
+  channelMerger = null;
+  gainNode = null;
+
+  const cleanupDelay = (FADE_DURATION + 0.1) * 1000;
   window.setTimeout(() => {
-    resetNodes();
-    ctx
-      .close()
-      .catch(() => {
-        /* ignore */
-      });
-  }, (FADE_TIME + 0.1) * 1000);
+    disconnectNode(nodes.left);
+    disconnectNode(nodes.right);
+    disconnectNode(nodes.merger);
+    disconnectNode(nodes.gain);
+  }, cleanupDelay);
 }

@@ -26,8 +26,8 @@ Return ONLY JSON in this format:
   "intensity": <number 0–1>,
   "sound": {
     "type": "<none | sine | binaural>",
-    "frequencyLeft": <number or null>,
-    "frequencyRight": <number or null>,
+    "leftHz": <number or null>,
+    "rightHz": <number or null>,
     "volume": <0–1>
   }
 }
@@ -54,6 +54,9 @@ const sanitizeSchema = (data: any): MoodComponentSchema => {
       ? data.sound.type
       : "none";
 
+  const parseHz = (value: unknown) =>
+    typeof value === "number" ? value : undefined;
+
   return {
     type: "mood_display",
     color: typeof data?.color === "string" ? data.color : "#0f172a",
@@ -63,14 +66,12 @@ const sanitizeSchema = (data: any): MoodComponentSchema => {
     ),
     sound: {
       type: soundType,
-      frequencyLeft:
-        typeof data?.sound?.frequencyLeft === "number"
-          ? data.sound.frequencyLeft
-          : undefined,
-      frequencyRight:
-        typeof data?.sound?.frequencyRight === "number"
-          ? data.sound.frequencyRight
-          : undefined,
+      leftHz:
+        parseHz(data?.sound?.leftHz) ??
+        parseHz(data?.sound?.frequencyLeft),
+      rightHz:
+        parseHz(data?.sound?.rightHz) ??
+        parseHz(data?.sound?.frequencyRight),
       volume:
         typeof data?.sound?.volume === "number"
           ? clamp(data.sound.volume)

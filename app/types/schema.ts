@@ -11,8 +11,11 @@ export type MoodComponentSchema = {
   intensity: number;
   sound: {
     type: "none" | "sine" | "binaural";
+    leftHz?: number;
+    rightHz?: number;
+    volume?: number;
+    /** Legacy support for old schema keys */
     frequencyLeft?: number;
     frequencyRight?: number;
-    volume?: number;
   };
 };

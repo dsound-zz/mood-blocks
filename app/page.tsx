@@ -3,7 +3,7 @@
 import { FormEvent, useState } from "react";
 import MoodRenderer from "./components/MoodRenderer";
 import type { MoodComponentSchema } from "./types/schema";
-import { prepareAudioContext } from "./utils/sound";
+import { unlockAudio } from "./utils/sound";
 
 export default function Home() {
   const [mood, setMood] = useState("");
@@ -13,13 +13,13 @@ export default function Home() {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    await unlockAudio();
     if (!mood.trim()) return;
 
     setIsLoading(true);
     setError(null);
 
     try {
-      await prepareAudioContext();
       const res = await fetch("/api/mood", {
         method: "POST",
         body: JSON.stringify({ mood }),
@@ -46,7 +46,13 @@ export default function Home() {
   };
 
   if (schema) {
-    return <MoodRenderer schema={schema} onEnd={handleEnd} />;
+    return (
+      <MoodRenderer
+        schema={schema}
+        onEnd={handleEnd}
+        moodLabel={mood.trim() || undefined}
+      />
+    );
   }
 
   return (
@@ -91,6 +97,9 @@ export default function Home() {
         <button
           type="submit"
           disabled={isLoading}
+          onClick={() => {
+            void unlockAudio();
+          }}
           style={{
             padding: "0.85rem 1rem",
             borderRadius: "0.75rem",
@@ -103,7 +112,7 @@ export default function Home() {
             opacity: isLoading ? 0.7 : 1,
           }}
         >
-          {isLoading ? "..." : "Go"}
+          {isLoading ? "Hold on..." : "Go"}
         </button>
         {error && (
           <p style={{ color: "#fda4af", fontSize: "0.9rem" }}>{error}</p>
