@@ -19,12 +19,27 @@ type MoodRendererProps = {
   moodLabel?: string;
 };
 
+type MoodClassification =
+  | "calm"
+  | "stressed"
+  | "sad"
+  | "reflective"
+  | "energized"
+  | "playful"
+  | "confused";
+
+type ClassifiedSchema = MoodComponentSchema & {
+  classification?: MoodClassification | null;
+};
+
 export default function MoodRenderer({
   schema,
   onEnd,
   moodLabel,
 }: MoodRendererProps) {
   const { color, effect, sound: schemaSound, intensity } = schema;
+  const classification =
+    (schema as ClassifiedSchema).classification ?? null;
   const [soundOverride, setSoundOverride] = useState<
     MoodComponentSchema["sound"] | null
   >(null);
@@ -56,24 +71,37 @@ export default function MoodRenderer({
     : null;
 
   useEffect(() => {
-    void startSound(schemaSound);
+    const config = schemaSound
+      ? { ...schemaSound, classification }
+      : schemaSound;
+    void startSound(config);
     return () => {
       stopSound();
     };
-  }, [schemaSound]);
+  }, [schemaSound, classification]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (!schema.message) {
-      setMessageOpacity(0);
-      return;
+      const hideId = window.setTimeout(() => {
+        setMessageOpacity(0);
+      }, 0);
+      return () => {
+        window.clearTimeout(hideId);
+      };
     }
-    setMessageOpacity(1);
-    const fadeOut = window.setTimeout(() => {
+
+    const showId = window.setTimeout(() => {
+      setMessageOpacity(1);
+    }, 0);
+
+    const hideId = window.setTimeout(() => {
       setMessageOpacity(0);
     }, 7000);
+
     return () => {
-      window.clearTimeout(fadeOut);
+      window.clearTimeout(showId);
+      window.clearTimeout(hideId);
     };
   }, [schema.message]);
 
@@ -162,7 +190,11 @@ export default function MoodRenderer({
     const overrideConfig = buildSoundOverride(selected);
     setSoundOverride(overrideConfig);
     stopSound();
-    void startSound(overrideConfig ?? schemaSound);
+    const nextSound = overrideConfig ?? schemaSound;
+    const config = nextSound
+      ? { ...nextSound, classification }
+      : nextSound;
+    void startSound(config);
   };
 
   const handleEnd = () => {
