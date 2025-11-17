@@ -1,7 +1,7 @@
 "use client";
 
 type ParticlesProps = {
-  intensity: number;
+  intensity?: number;
 };
 
 const clamp = (value: number, min = 0, max = 1) =>
@@ -30,15 +30,14 @@ export default function Particles({ intensity }: ParticlesProps) {
   return (
     <div
       style={{
-        position: "absolute",
+        position: "absolute" as const,
         inset: 0,
         pointerEvents: "none",
         overflow: "hidden",
         zIndex: 0,
       }}
     >
-      <style>
-        {`
+      <style>{`
           @keyframes floatUp {
             0% {
               transform: translate3d(0, 30%, 0);
