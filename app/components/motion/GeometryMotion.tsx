@@ -28,7 +28,7 @@ export default function GeometryMotion({
   paused = false,
 }: GeometryMotionProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const animationRef = useRef<number>();
+  const animationRef = useRef<number | null>(null);
   const shapesRef = useRef<Shape[]>([]);
   const pausedRef = useRef(paused);
   const lastTimeRef = useRef<number>(0);

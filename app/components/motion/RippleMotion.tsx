@@ -21,7 +21,7 @@ export default function RippleMotion({
   paused = false,
 }: RippleMotionProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const animationRef = useRef<number>();
+  const animationRef = useRef<number | null>(null);
   const ripplesRef = useRef<Ripple[]>([]);
   const pausedRef = useRef(paused);
   const lastTimeRef = useRef<number>(0);
