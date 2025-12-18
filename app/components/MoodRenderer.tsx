@@ -530,7 +530,6 @@ export default function MoodRenderer({
           display: "flex",
           flexWrap: "wrap",
           alignItems: "center",
-          justifyContent: "space-between",
           gap: "0.75rem",
           padding: "0 1rem",
         }}
