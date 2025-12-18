@@ -117,6 +117,7 @@ export default function SoundToggle({
       style={{
         position: "relative",
         fontSize: "0.85rem",
+        width: "100%",
       }}
     >
       <button
@@ -127,10 +128,13 @@ export default function SoundToggle({
           color: "white",
           border: "1px solid rgba(255,255,255,0.2)",
           borderRadius: "999px",
-          padding: "0.45rem 1rem",
+          padding: "0.75rem 1.5rem",
           cursor: "pointer",
-          fontSize: "0.85rem",
+          fontSize: "1rem",
           boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
+          width: "100%",
+          display: "inline-flex",
+          justifyContent: "center",
         }}
       >
         Sound: {currentLabel}

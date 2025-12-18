@@ -52,17 +52,37 @@ body {
   text-shadow: 0 0 16px rgba(0, 0, 0, 0.35);
 }
 
+.session-controls__sound {
+  flex: 1 1 240px;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.session-controls__end {
+  flex: 0 0 auto;
+  width: fit-content;
+}
+
 @media (max-width: 640px) {
   .session-controls {
-    flex-direction: column;
+    flex-wrap: nowrap;
+    flex-direction: row;
   }
 
   .session-controls__end {
     order: 1;
+    flex: 1 1 0;
+    width: 100%;
   }
 
   .session-controls__sound {
     order: 2;
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .session-controls__sound > * {
+    width: 100%;
   }
 }
 

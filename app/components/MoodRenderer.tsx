@@ -534,14 +534,7 @@ export default function MoodRenderer({
           padding: "0 1rem",
         }}
       >
-        <div
-          className="session-controls__sound"
-          style={{
-            flex: "1 1 240px",
-            display: "flex",
-            justifyContent: "flex-start",
-          }}
-        >
+        <div className="session-controls__sound">
           <SoundToggle
             currentSound={effectiveSound?.type ?? "none"}
             currentNature={natureScene}
@@ -562,8 +555,6 @@ export default function MoodRenderer({
             fontSize: "1rem",
             cursor: "pointer",
             boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
-            flex: "0 0 auto",
-            width: "fit-content",
           }}
         >
           End
