@@ -521,29 +521,34 @@ export default function MoodRenderer({
       <div
         style={{
           position: "absolute",
-          bottom: "2rem",
-          right: "2rem",
-          zIndex: 5,
-        }}
-      >
-        <SoundToggle
-          currentSound={effectiveSound?.type ?? "none"}
-          currentNature={natureScene}
-          recommendedNature={schema.nature?.scene}
-          onSoundChange={handleSoundChange}
-          onNatureChange={handleNatureSelect}
-        />
-      </div>
-
-      <div
-        style={{
-          position: "absolute",
-          bottom: "2rem",
+          bottom: "1.5rem",
           left: "50%",
           transform: "translateX(-50%)",
-          zIndex: 4,
+          zIndex: 5,
+          width: "min(92vw, 680px)",
+          display: "flex",
+          flexWrap: "wrap",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: "0.75rem",
+          padding: "0 1rem",
         }}
       >
+        <div
+          style={{
+            flex: "1 1 240px",
+            display: "flex",
+            justifyContent: "flex-start",
+          }}
+        >
+          <SoundToggle
+            currentSound={effectiveSound?.type ?? "none"}
+            currentNature={natureScene}
+            recommendedNature={schema.nature?.scene}
+            onSoundChange={handleSoundChange}
+            onNatureChange={handleNatureSelect}
+          />
+        </div>
         <button
           onClick={handleEnd}
           style={{
@@ -555,6 +560,8 @@ export default function MoodRenderer({
             fontSize: "1rem",
             cursor: "pointer",
             boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
+            flex: "0 0 auto",
+            width: "fit-content",
           }}
         >
           End
