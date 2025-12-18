@@ -7,6 +7,18 @@ export type SoundType =
   | "brown_noise"
   | "blue_noise";
 
+export type NatureScene =
+  | "rain"
+  | "ocean"
+  | "forest"
+  | "wind"
+  | "fire"
+  | "night"
+  | "river"
+  | "birds";
+
+export type MotionEffect = "none" | "bubbles" | "geometry" | "ripples";
+
 export type MoodComponentSchema = {
   type: "mood_display";
   color: string;
@@ -28,4 +40,8 @@ export type MoodComponentSchema = {
     frequencyRight?: number;
   };
   message?: string;
+  nature?: {
+    scene: NatureScene;
+  };
+  motion?: MotionEffect;
 };

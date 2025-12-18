@@ -60,6 +60,7 @@ export default function Ripple({ intensity, color }: RippleProps) {
             background: "radial-gradient(circle, rgba(255,255,255,0.08), transparent)",
             animation: `rippleExpand ${duration}s ease-out infinite`,
             animationDelay: `${index * (duration / count)}s`,
+            boxShadow: `0 0 30px ${color}`,
           }}
         />
       ))}

@@ -62,13 +62,18 @@ export default function FrequencySplash({
 
   useEffect(() => {
     if (!splashLabel) {
-      setIsVisible(false);
-      return;
+      if (typeof window === "undefined") {
+        return;
+      }
+      const frame = window.requestAnimationFrame(() => {
+        setIsVisible(false);
+      });
+      return () => {
+        window.cancelAnimationFrame(frame);
+      };
     }
 
     let hideTimeout: number | undefined;
-    let intervalId: number | undefined;
-
     const runCycle = () => {
       setCycleKey((key) => key + 1);
       setIsVisible(true);
@@ -80,7 +85,7 @@ export default function FrequencySplash({
     };
 
     runCycle();
-    intervalId = window.setInterval(runCycle, RETURN_DELAY_MS);
+    const intervalId = window.setInterval(runCycle, RETURN_DELAY_MS);
 
     return () => {
       window.clearTimeout(hideTimeout);

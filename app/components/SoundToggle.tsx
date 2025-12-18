@@ -1,11 +1,17 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { MoodComponentSchema } from "@/app/types/schema";
+import type {
+  MoodComponentSchema,
+  NatureScene,
+} from "@/app/types/schema";
 
 type SoundToggleProps = {
-  current?: MoodComponentSchema["sound"]["type"];
-  onChange: (type: MoodComponentSchema["sound"]["type"]) => void;
+  currentSound?: MoodComponentSchema["sound"]["type"];
+  currentNature?: NatureScene | null;
+  recommendedNature?: NatureScene | null;
+  onSoundChange: (type: MoodComponentSchema["sound"]["type"]) => void;
+  onNatureChange: (scene: NatureScene) => void;
 };
 
 const SOUND_OPTIONS: MoodComponentSchema["sound"]["type"][] = [
@@ -28,9 +34,34 @@ const SOUND_LABELS: Record<MoodComponentSchema["sound"]["type"], string> = {
   none: "Muted",
 };
 
+const NATURE_OPTIONS: NatureScene[] = [
+  "rain",
+  "ocean",
+  "forest",
+  "wind",
+  "fire",
+  "night",
+  "river",
+  "birds",
+];
+
+const NATURE_LABELS: Record<NatureScene, string> = {
+  rain: "Rain",
+  ocean: "Ocean",
+  forest: "Forest",
+  wind: "Wind",
+  fire: "Fire",
+  night: "Night",
+  river: "River",
+  birds: "Birds",
+};
+
 export default function SoundToggle({
-  current = "none",
-  onChange,
+  currentSound = "none",
+  currentNature = null,
+  recommendedNature = null,
+  onSoundChange,
+  onNatureChange,
 }: SoundToggleProps) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -51,14 +82,21 @@ export default function SoundToggle({
     };
   }, []);
 
-  const handleSelect = (
+  const handleSelectSound = (
     option: MoodComponentSchema["sound"]["type"]
   ) => {
-    onChange(option);
+    onSoundChange(option);
     setIsOpen(false);
   };
 
-  const currentLabel = SOUND_LABELS[current] ?? current;
+  const handleSelectNature = (scene: NatureScene) => {
+    onNatureChange(scene);
+    setIsOpen(false);
+  };
+
+  const currentLabel = currentNature
+    ? `Nature · ${NATURE_LABELS[currentNature]}`
+    : SOUND_LABELS[currentSound ?? "none"] ?? "Muted";
 
   return (
     <div
@@ -99,29 +137,96 @@ export default function SoundToggle({
             backdropFilter: "blur(6px)",
           }}
         >
-          {SOUND_OPTIONS.map((option) => (
-            <button
-              key={option}
-              type="button"
-              onClick={() => handleSelect(option)}
-              style={{
-                display: "block",
-                width: "100%",
-                textAlign: "left",
-                padding: "0.55rem 0.85rem",
-                background:
-                  option === current
+          <div
+            style={{
+              padding: "0.35rem 0.85rem",
+              fontSize: "0.7rem",
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              color: "rgba(255,255,255,0.5)",
+            }}
+          >
+            Synthetic
+          </div>
+          {SOUND_OPTIONS.map((option) => {
+            const isSelected = !currentNature && option === currentSound;
+            return (
+              <button
+                key={option}
+                type="button"
+                onClick={() => handleSelectSound(option)}
+                style={{
+                  display: "block",
+                  width: "100%",
+                  textAlign: "left",
+                  padding: "0.55rem 0.85rem",
+                  background: isSelected
                     ? "rgba(255,255,255,0.1)"
                     : "transparent",
-                color: "white",
-                border: "none",
-                cursor: "pointer",
-                fontSize: "0.85rem",
-              }}
-            >
-              {SOUND_LABELS[option]}
-            </button>
-          ))}
+                  color: "white",
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: "0.85rem",
+                }}
+              >
+                {SOUND_LABELS[option]}
+              </button>
+            );
+          })}
+          <div
+            style={{
+              padding: "0.35rem 0.85rem",
+              fontSize: "0.7rem",
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              color: "rgba(255,255,255,0.5)",
+              borderTop: "1px solid rgba(255,255,255,0.08)",
+              marginTop: "0.25rem",
+            }}
+          >
+            Nature
+          </div>
+          {NATURE_OPTIONS.map((scene) => {
+            const isSelected = currentNature === scene;
+            const isRecommended = recommendedNature === scene;
+            return (
+              <button
+                key={scene}
+                type="button"
+                onClick={() => handleSelectNature(scene)}
+                style={{
+                  display: "flex",
+                  width: "100%",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  textAlign: "left",
+                  padding: "0.55rem 0.85rem",
+                  background: isSelected
+                    ? "rgba(99,102,241,0.25)"
+                    : "transparent",
+                  color: "white",
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: "0.85rem",
+                  gap: "0.5rem",
+                }}
+              >
+                <span>{NATURE_LABELS[scene]}</span>
+                {isRecommended && (
+                  <span
+                    style={{
+                      fontSize: "0.65rem",
+                      letterSpacing: "0.08em",
+                      textTransform: "uppercase",
+                      color: "rgba(255,255,255,0.6)",
+                    }}
+                  >
+                    Rec
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
       )}
     </div>

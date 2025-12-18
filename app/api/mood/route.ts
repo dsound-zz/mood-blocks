@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
-import type { MoodComponentSchema } from "@/app/types/schema";
+import type {
+  MoodComponentSchema,
+  MotionEffect,
+  NatureScene,
+} from "@/app/types/schema";
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const OPENAI_MODEL = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
@@ -20,6 +24,22 @@ const SOUND_TYPES: MoodComponentSchema["sound"]["type"][] = [
   "pink_noise",
   "brown_noise",
   "blue_noise",
+];
+const NATURE_SCENES: NatureScene[] = [
+  "rain",
+  "ocean",
+  "forest",
+  "wind",
+  "fire",
+  "night",
+  "river",
+  "birds",
+];
+const MOTION_TYPES: MotionEffect[] = [
+  "none",
+  "bubbles",
+  "geometry",
+  "ripples",
 ];
 
 const CURSE_PATTERNS = [
@@ -70,39 +90,91 @@ Only return JSON. No explanations.
 const clamp = (value: number, min = 0, max = 1) =>
   Math.min(Math.max(value, min), max);
 
-const sanitizeSchema = (data: any): MoodComponentSchema => {
-  const effect = EFFECTS.includes(data?.effect)
-    ? data.effect
-    : "gradient";
+type RawSound = {
+  type?: unknown;
+  leftHz?: unknown;
+  rightHz?: unknown;
+  volume?: unknown;
+  frequencyLeft?: unknown;
+  frequencyRight?: unknown;
+};
 
-  const soundType = SOUND_TYPES.includes(data?.sound?.type)
-    ? data.sound.type
-    : "none";
+type RawNature = {
+  scene?: unknown;
+};
+
+const sanitizeSchema = (data: unknown): MoodComponentSchema => {
+  const raw =
+    typeof data === "object" && data !== null
+      ? (data as Record<string, unknown>)
+      : {};
+  const rawSound: RawSound =
+    typeof raw.sound === "object" && raw.sound !== null
+      ? (raw.sound as RawSound)
+      : {};
+  const rawNature: RawNature =
+    typeof raw.nature === "object" && raw.nature !== null
+      ? (raw.nature as RawNature)
+      : {};
+
+  const effectValue = raw.effect;
+  const effect =
+    typeof effectValue === "string" &&
+    EFFECTS.includes(effectValue as MoodComponentSchema["effect"])
+      ? (effectValue as MoodComponentSchema["effect"])
+      : "gradient";
+
+  const soundType =
+    typeof rawSound.type === "string" &&
+    SOUND_TYPES.includes(
+      rawSound.type as MoodComponentSchema["sound"]["type"]
+    )
+      ? (rawSound.type as MoodComponentSchema["sound"]["type"])
+      : "none";
+
+  const natureScene =
+    typeof rawNature.scene === "string" ? rawNature.scene : null;
+  const normalizedNature = natureScene
+    ? NATURE_SCENES.includes(natureScene as NatureScene)
+      ? { scene: natureScene as NatureScene }
+      : undefined
+    : undefined;
+
+  const motionType =
+    typeof raw.motion === "string" &&
+    MOTION_TYPES.includes(raw.motion as MotionEffect)
+      ? (raw.motion as MotionEffect)
+      : undefined;
 
   const parseHz = (value: unknown) =>
     typeof value === "number" ? value : undefined;
 
   return {
     type: "mood_display",
-    color: typeof data?.color === "string" ? data.color : "#0f172a",
+    color: typeof raw.color === "string" ? raw.color : "#0f172a",
     effect,
     intensity: clamp(
-      typeof data?.intensity === "number" ? data.intensity : 0.5
+      typeof raw.intensity === "number" ? (raw.intensity as number) : 0.5
     ),
     sound: {
       type: soundType,
       leftHz:
-        parseHz(data?.sound?.leftHz) ??
-        parseHz(data?.sound?.frequencyLeft),
+        parseHz(rawSound.leftHz) ??
+        parseHz(rawSound.frequencyLeft),
       rightHz:
-        parseHz(data?.sound?.rightHz) ??
-        parseHz(data?.sound?.frequencyRight),
+        parseHz(rawSound.rightHz) ??
+        parseHz(rawSound.frequencyRight),
       volume:
-        typeof data?.sound?.volume === "number"
-          ? clamp(data.sound.volume)
+        typeof rawSound.volume === "number"
+          ? clamp(rawSound.volume as number)
           : 0.3,
     },
-    message: typeof data?.message === "string" ? data.message : undefined,
+    message:
+      typeof raw.message === "string"
+        ? (raw.message as string)
+        : undefined,
+    nature: normalizedNature,
+    motion: motionType,
   };
 };
 
@@ -115,6 +187,7 @@ const fallbackSchema: MoodComponentSchema = {
     type: "none",
     volume: 0.2,
   },
+  motion: "bubbles",
 };
 
 const applyCalmingDefaults = (

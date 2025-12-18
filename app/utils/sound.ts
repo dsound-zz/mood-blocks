@@ -59,8 +59,11 @@ const ensureAudioContext = () => {
   if (!isBrowser()) return null;
   if (audioCtx) return audioCtx;
 
+  const audioWindow = window as typeof window & {
+    webkitAudioContext?: typeof AudioContext;
+  };
   const AudioCtor =
-    window.AudioContext || (window as any).webkitAudioContext;
+    audioWindow.AudioContext ?? audioWindow.webkitAudioContext;
   if (!AudioCtor) return null;
   audioCtx = new AudioCtor();
   return audioCtx;
