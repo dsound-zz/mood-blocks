@@ -52,6 +52,20 @@ body {
   text-shadow: 0 0 16px rgba(0, 0, 0, 0.35);
 }
 
+@media (max-width: 640px) {
+  .session-controls {
+    flex-direction: column;
+  }
+
+  .session-controls__end {
+    order: 1;
+  }
+
+  .session-controls__sound {
+    order: 2;
+  }
+}
+
 @keyframes frequencySplashPulse {
   0% {
     transform: scale(0.92);

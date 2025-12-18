@@ -519,6 +519,7 @@ export default function MoodRenderer({
       />
 
       <div
+        className="session-controls"
         style={{
           position: "absolute",
           bottom: "1.5rem",
@@ -535,6 +536,7 @@ export default function MoodRenderer({
         }}
       >
         <div
+          className="session-controls__sound"
           style={{
             flex: "1 1 240px",
             display: "flex",
@@ -550,6 +552,7 @@ export default function MoodRenderer({
           />
         </div>
         <button
+          className="session-controls__end"
           onClick={handleEnd}
           style={{
             padding: "0.75rem 1.5rem",
