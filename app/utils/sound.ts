@@ -193,11 +193,12 @@ const fillPinkNoise = (data: Float32Array) => {
 };
 
 const fillBrownNoise = (data: Float32Array) => {
-  let last = 0;
+  let lastOut = 0;
   for (let i = 0; i < data.length; i += 1) {
     const white = Math.random() * 2 - 1;
-    last += white / 5;
-    data[i] = Math.max(-1, Math.min(1, last));
+    const value = (lastOut + white * 0.02) / 1.02;
+    lastOut = value;
+    data[i] = Math.max(-1, Math.min(1, value * 3.5));
   }
 };
 

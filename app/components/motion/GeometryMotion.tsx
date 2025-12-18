@@ -63,8 +63,9 @@ export default function GeometryMotion({
     const createShape = (): Shape => {
       const size = 40 + Math.random() * 80 * (0.6 + intensity);
       const rotationSpeed =
-        (Math.random() * 0.2 + 0.05) * (Math.random() > 0.5 ? 1 : -1);
-      const driftMagnitude = 6 + intensity * 12;
+        (0.12 + Math.random() * 0.25) *
+        (Math.random() > 0.5 ? 1 : -1);
+      const driftMagnitude = 10 + intensity * 18;
       const angle = Math.random() * Math.PI * 2;
       const opacity = 0.08 + Math.random() * 0.12;
       return {
@@ -147,8 +148,8 @@ export default function GeometryMotion({
 
       shapesRef.current.forEach((shape, index) => {
         shape.rotation += shape.rotationSpeed * delta;
-        shape.x += shape.driftX * delta * 0.25;
-        shape.y += shape.driftY * delta * 0.25;
+        shape.x += shape.driftX * delta * 0.4;
+        shape.y += shape.driftY * delta * 0.4;
 
         if (
           shape.x < -shape.size ||

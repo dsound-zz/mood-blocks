@@ -55,15 +55,15 @@ export default function RippleMotion({
 
     const createRipple = (delay: number): Ripple => ({
       radius: 0,
-      speed: 18 + intensity * 24,
-      lineWidth: 1.2 + intensity * 0.8,
+      speed: 26 + intensity * 32,
+      lineWidth: 1.6 + intensity * 1.1,
       delay,
       elapsed: 0,
       opacity: 0.2 + intensity * 0.2,
     });
 
     const rippleCount = 4;
-    const rippleSpacing = 2.5;
+    const rippleSpacing = 1.8;
     ripplesRef.current = Array.from({ length: rippleCount }, (_, index) =>
       createRipple(index * rippleSpacing)
     );
@@ -97,7 +97,7 @@ export default function RippleMotion({
           return;
         }
 
-        ripple.radius += ripple.speed * delta * 0.45;
+        ripple.radius += ripple.speed * delta * 0.7;
 
         const progress = ripple.radius / maxRadius;
         const opacity = Math.max(0, ripple.opacity * (1 - progress));

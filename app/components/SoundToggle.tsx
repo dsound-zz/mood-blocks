@@ -64,6 +64,7 @@ export default function SoundToggle({
   onNatureChange,
 }: SoundToggleProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [showAllNature, setShowAllNature] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -82,6 +83,17 @@ export default function SoundToggle({
     };
   }, []);
 
+  useEffect(() => {
+    if (isOpen) return;
+    if (typeof window === "undefined") return;
+    const frame = window.requestAnimationFrame(() => {
+      setShowAllNature(false);
+    });
+    return () => {
+      window.cancelAnimationFrame(frame);
+    };
+  }, [isOpen]);
+
   const handleSelectSound = (
     option: MoodComponentSchema["sound"]["type"]
   ) => {
@@ -97,6 +109,7 @@ export default function SoundToggle({
   const currentLabel = currentNature
     ? `Nature · ${NATURE_LABELS[currentNature]}`
     : SOUND_LABELS[currentSound ?? "none"] ?? "Muted";
+  const recommendedScene = recommendedNature ?? null;
 
   return (
     <div
@@ -186,47 +199,92 @@ export default function SoundToggle({
           >
             Nature
           </div>
-          {NATURE_OPTIONS.map((scene) => {
-            const isSelected = currentNature === scene;
-            const isRecommended = recommendedNature === scene;
-            return (
-              <button
-                key={scene}
-                type="button"
-                onClick={() => handleSelectNature(scene)}
+          {recommendedScene && (
+            <button
+              type="button"
+              onClick={() => handleSelectNature(recommendedScene)}
+              style={{
+                display: "flex",
+                width: "100%",
+                alignItems: "center",
+                justifyContent: "space-between",
+                textAlign: "left",
+                padding: "0.6rem 0.85rem",
+                background:
+                  currentNature === recommendedScene
+                    ? "rgba(129,140,248,0.35)"
+                    : "rgba(255,255,255,0.05)",
+                color: "white",
+                border: "none",
+                cursor: "pointer",
+                fontSize: "0.88rem",
+                gap: "0.5rem",
+              }}
+            >
+              <span>
+                Recommended · {NATURE_LABELS[recommendedScene]}
+              </span>
+              <span
                 style={{
-                  display: "flex",
-                  width: "100%",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  textAlign: "left",
-                  padding: "0.55rem 0.85rem",
-                  background: isSelected
-                    ? "rgba(99,102,241,0.25)"
-                    : "transparent",
-                  color: "white",
-                  border: "none",
-                  cursor: "pointer",
-                  fontSize: "0.85rem",
-                  gap: "0.5rem",
+                  fontSize: "0.65rem",
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                  color: "rgba(255,255,255,0.65)",
                 }}
               >
-                <span>{NATURE_LABELS[scene]}</span>
-                {isRecommended && (
-                  <span
-                    style={{
-                      fontSize: "0.65rem",
-                      letterSpacing: "0.08em",
-                      textTransform: "uppercase",
-                      color: "rgba(255,255,255,0.6)",
-                    }}
-                  >
-                    Rec
-                  </span>
-                )}
-              </button>
-            );
-          })}
+                Calmest Match
+              </span>
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => setShowAllNature((value) => !value)}
+            style={{
+              display: "block",
+              width: "100%",
+              textAlign: "left",
+              padding: "0.5rem 0.85rem",
+              background: "transparent",
+              color: "rgba(255,255,255,0.75)",
+              border: "none",
+              cursor: "pointer",
+              fontSize: "0.8rem",
+              letterSpacing: "0.04em",
+            }}
+          >
+            {showAllNature ? "Hide all nature" : "Show all nature"}
+          </button>
+          {(showAllNature || !recommendedScene) &&
+            NATURE_OPTIONS.filter(
+              (scene) => scene !== recommendedScene
+            ).map((scene) => {
+              const isSelected = currentNature === scene;
+              return (
+                <button
+                  key={scene}
+                  type="button"
+                  onClick={() => handleSelectNature(scene)}
+                  style={{
+                    display: "flex",
+                    width: "100%",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    textAlign: "left",
+                    padding: "0.55rem 0.85rem",
+                    background: isSelected
+                      ? "rgba(99,102,241,0.25)"
+                      : "transparent",
+                    color: "white",
+                    border: "none",
+                    cursor: "pointer",
+                    fontSize: "0.85rem",
+                    gap: "0.5rem",
+                  }}
+                >
+                  <span>{NATURE_LABELS[scene]}</span>
+                </button>
+              );
+            })}
         </div>
       )}
     </div>

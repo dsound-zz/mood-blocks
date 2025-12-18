@@ -63,9 +63,9 @@ export default function BubblesMotion({
       const baseRadius = 18 + intensity * 40;
       const radius = clamp(baseRadius, 12, 60) * (0.65 + Math.random() * 0.7);
       const speed =
-        12 + intensity * 28 + Math.random() * (6 + intensity * 12);
-      const wobbleAmplitude = 12 + Math.random() * 18;
-      const wobbleSpeed = 0.5 + Math.random() * 0.65;
+        18 + intensity * 40 + Math.random() * (10 + intensity * 18);
+      const wobbleAmplitude = 14 + Math.random() * 20;
+      const wobbleSpeed = 0.65 + Math.random() * 0.85;
       const alpha = clamp(0.08 + intensity * 0.25, 0.08, 0.28);
 
       return {
@@ -102,7 +102,7 @@ export default function BubblesMotion({
       ctx2d.clearRect(0, 0, window.innerWidth, window.innerHeight);
 
       bubblesRef.current.forEach((bubble, index) => {
-        bubble.y -= bubble.speed * delta * 0.6;
+        bubble.y -= bubble.speed * delta * 0.85;
         bubble.wobblePhase += bubble.wobbleSpeed * delta;
         bubble.x =
           bubble.baseX + Math.sin(bubble.wobblePhase) * bubble.wobbleAmplitude;

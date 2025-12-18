@@ -1,6 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import Gradient from "@/app/components/effects/Gradient";
 import Splatter from "@/app/components/effects/Splatter";
 import Pulse from "@/app/components/effects/Pulse";
@@ -54,18 +60,38 @@ const getNaturePhotoSources = (scene: NatureScene) => [
 const clamp = (value: number, min = 0, max = 1) =>
   Math.min(Math.max(value, min), max);
 
+const preferBinauralSound = (
+  sound?: MoodComponentSchema["sound"] | null
+): MoodComponentSchema["sound"] | null => {
+  if (!sound) return null;
+  if (sound.type !== "sine") return sound;
+  const baseBeat =
+    sound.leftHz ??
+    sound.rightHz ??
+    sound.frequencyLeft ??
+    sound.frequencyRight ??
+    4;
+  return {
+    type: "binaural",
+    leftHz: baseBeat,
+    rightHz: baseBeat + 2,
+    volume: Math.min(sound.volume ?? 0.35, 0.6),
+  };
+};
+
 export default function MoodRenderer({
   schema,
   onEnd,
   moodLabel,
 }: MoodRendererProps) {
   const { color, effect, sound: schemaSound, intensity } = schema;
+  const baseSound = useMemo(() => preferBinauralSound(schemaSound), [schemaSound]);
   const classification =
     (schema as ClassifiedSchema).classification ?? null;
   const [soundOverride, setSoundOverride] = useState<
     MoodComponentSchema["sound"] | null
   >(null);
-  const effectiveSound = soundOverride ?? schemaSound;
+  const effectiveSound = soundOverride ?? baseSound;
   const [natureScene, setNatureScene] = useState<NatureScene | null>(
     null
   );
@@ -185,14 +211,12 @@ export default function MoodRenderer({
   }, [schema, stopNatureAudio]);
 
   useEffect(() => {
-    const config = schemaSound
-      ? { ...schemaSound, classification }
-      : schemaSound;
+    const config = baseSound ? { ...baseSound, classification } : baseSound;
     void startSound(config);
     return () => {
       stopSound();
     };
-  }, [schemaSound, classification]);
+  }, [baseSound, classification]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -251,21 +275,21 @@ export default function MoodRenderer({
   const buildSoundOverride = (
     selected: MoodComponentSchema["sound"]["type"]
   ): MoodComponentSchema["sound"] | null => {
-    if (schemaSound && selected === schemaSound.type) {
+    if (baseSound && selected === baseSound.type) {
       return null;
     }
 
-    const baseVolume = schemaSound?.volume ?? 0.35;
+    const baseVolume = baseSound?.volume ?? 0.35;
     if (selected === "none") {
       return { type: "none", volume: 0 };
     }
 
     if (selected === "sine") {
       const freq =
-        schemaSound?.leftHz ??
-        schemaSound?.rightHz ??
-        schemaSound?.frequencyLeft ??
-        schemaSound?.frequencyRight ??
+        baseSound?.leftHz ??
+        baseSound?.rightHz ??
+        baseSound?.frequencyLeft ??
+        baseSound?.frequencyRight ??
         432;
       return {
         type: "sine",
@@ -277,12 +301,12 @@ export default function MoodRenderer({
 
     if (selected === "binaural") {
       const left =
-        schemaSound?.leftHz ??
-        schemaSound?.frequencyLeft ??
+        baseSound?.leftHz ??
+        baseSound?.frequencyLeft ??
         4;
       const right =
-        schemaSound?.rightHz ??
-        schemaSound?.frequencyRight ??
+        baseSound?.rightHz ??
+        baseSound?.frequencyRight ??
         left + 2;
       return {
         type: "binaural",
@@ -308,7 +332,7 @@ export default function MoodRenderer({
     const overrideConfig = buildSoundOverride(selected);
     setSoundOverride(overrideConfig);
     stopSound();
-    const nextSound = overrideConfig ?? schemaSound;
+    const nextSound = overrideConfig ?? baseSound;
     const config = nextSound
       ? { ...nextSound, classification }
       : nextSound;

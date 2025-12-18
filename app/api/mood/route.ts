@@ -75,6 +75,10 @@ Return ONLY JSON in this format:
     "leftHz": <number or null>,
     "rightHz": <number or null>,
     "volume": <0–1>
+  },
+  "motion": "<none | bubbles | geometry | ripples>",
+  "nature": {
+    "scene": "<rain | ocean | forest | wind | fire | night | river | birds>"
   }
 }
 
@@ -83,6 +87,20 @@ Effect guidelines:
 - anxious, overwhelmed → haze or pulse; soft purple; binaural 4–6 Hz.
 - sad, reflective → haze or ripple; indigo; low-volume sine.
 - energetic, excited → splatter or particles; oranges; alpha 10–12 Hz.
+
+Motion guidelines:
+- use "bubbles" for soft, uplifting moods
+- use "geometry" for focus/structure
+- use "ripples" for reflective/grounded moods
+- set "none" only when stillness is essential
+
+Nature guidelines:
+- Always pick the single most helpful scene for the described emotion
+- rain / ocean for cleansing or anxiety
+- forest / birds for grounding
+- wind / night for introspection
+- fire / river for energy or flow
+- Provide just one scene; UI will allow switching later
 
 Only return JSON. No explanations.
 `;
@@ -184,8 +202,10 @@ const fallbackSchema: MoodComponentSchema = {
   effect: "gradient",
   intensity: 0.5,
   sound: {
-    type: "none",
-    volume: 0.2,
+    type: "binaural",
+    leftHz: 4,
+    rightHz: 6,
+    volume: 0.32,
   },
   motion: "bubbles",
 };
