@@ -27,7 +27,7 @@ export default function BubblesMotion({
   paused = false,
 }: BubblesMotionProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const animationRef = useRef<number>();
+  const animationRef = useRef<number | null>(null);
   const bubblesRef = useRef<Bubble[]>([]);
   const pausedRef = useRef(paused);
   const lastTimeRef = useRef<number>(0);
